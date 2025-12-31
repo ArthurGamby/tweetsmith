@@ -6,6 +6,7 @@ export default function TweetTransformer() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const characterCount = input.length;
   const maxCharacters = 280;
@@ -15,20 +16,37 @@ export default function TweetTransformer() {
   const handleTransform = async () => {
     if (isEmpty || isLoading) return;
 
+    // Reset states before starting
+    setError("");
+    setOutput("");
     setIsLoading(true);
-    console.log("Transforming tweet:", input);
 
-    // Simulate API call delay for now
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      const response = await fetch("/api/transform", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ draft: input }),
+      });
 
-    // Placeholder: In the future, this will call the API
-    setOutput(input);
-    setIsLoading(false);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to transform tweet");
+      }
+
+      setOutput(data.transformed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="w-full space-y-6">
-      {/* Input Section */}@
+      {/* Input Section */}
       <div className="space-y-2">
         <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-muted">
           Your Draft
@@ -86,6 +104,11 @@ export default function TweetTransformer() {
           "Transform"
         )}
       </button>
+
+      {/* Error Message */}
+      {error && (
+        <p className="text-sm text-red-400">{error}</p>
+      )}
 
       {/* Output Section */}
       {output && (
