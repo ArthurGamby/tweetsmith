@@ -177,7 +177,12 @@ export default function TweetTransformer() {
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       {/* Tweet Preview */}
-      <TweetPreview content={output || null} isLoading={isLoading} />
+      <TweetPreview
+        content={output || null}
+        isLoading={isLoading}
+        original={input}
+        context={context}
+      />
     </div>
   );
 }

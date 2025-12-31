@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Bookmark, Loader2 } from "lucide-react";
 
 interface TweetPreviewProps {
   content: string | null;
   isLoading: boolean;
+  original?: string;
+  context?: string;
 }
 
 // Twitter verified badge SVG
@@ -23,14 +25,53 @@ function VerifiedBadge() {
   );
 }
 
-export default function TweetPreview({ content, isLoading }: TweetPreviewProps) {
+export default function TweetPreview({ content, isLoading, original, context }: TweetPreviewProps) {
   const [copied, setCopied] = useState(false);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const previousContentRef = useRef<string | null>(null);
+
+  // Reset saved state when content changes
+  useEffect(() => {
+    if (content !== previousContentRef.current) {
+      setSaveState("idle");
+      previousContentRef.current = content;
+    }
+  }, [content]);
 
   const handleCopy = async () => {
     if (!content) return;
     await navigator.clipboard.writeText(content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSave = async () => {
+    if (!content || !original || saveState === "saving" || saveState === "saved") return;
+
+    setSaveState("saving");
+
+    try {
+      const response = await fetch("/api/tweets", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          original,
+          transformed: content,
+          context: context || null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save tweet");
+      }
+
+      setSaveState("saved");
+    } catch (error) {
+      console.error("Error saving tweet:", error);
+      setSaveState("idle");
+    }
   };
 
   const hasContent = content && content.trim().length > 0;
@@ -61,19 +102,47 @@ export default function TweetPreview({ content, isLoading }: TweetPreviewProps) 
           </div>
         </div>
 
-        {/* Copy button - only show when content exists */}
+        {/* Action buttons - only show when content exists */}
         {hasContent && !isLoading && (
-          <button
-            onClick={handleCopy}
-            className="p-2 text-muted hover:text-foreground hover:bg-border/50 rounded-full transition-colors"
-            title="Copy to clipboard"
-          >
-            {copied ? (
-              <Check className="h-4 w-4 text-green-500" />
-            ) : (
-              <Copy className="h-4 w-4" />
-            )}
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Save button */}
+            <button
+              onClick={handleSave}
+              disabled={saveState === "saving" || saveState === "saved"}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all duration-200 ease-out ${
+                saveState === "saved"
+                  ? "bg-emerald-500/10 text-emerald-500"
+                  : saveState === "saving"
+                    ? "text-muted cursor-not-allowed"
+                    : "text-muted hover:text-foreground hover:bg-border/50 hover:scale-105"
+              }`}
+              title={saveState === "saved" ? "Saved!" : "Save tweet"}
+            >
+              {saveState === "saving" ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-xs font-medium">Saving</span>
+                </>
+              ) : saveState === "saved" ? (
+                <Check className="h-4 w-4 animate-[zoom-in_200ms_ease-out]" />
+              ) : (
+                <Bookmark className="h-4 w-4" />
+              )}
+            </button>
+
+            {/* Copy button */}
+            <button
+              onClick={handleCopy}
+              className="p-2 text-muted hover:text-foreground hover:bg-border/50 rounded-full transition-all duration-200 ease-out hover:scale-105"
+              title="Copy to clipboard"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-500" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </button>
+          </div>
         )}
       </div>
 
