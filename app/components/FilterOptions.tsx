@@ -38,7 +38,7 @@ export function FilterButton({ isOpen, onToggle, filters }: FilterButtonProps) {
   return (
     <button
       onClick={onToggle}
-      className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted hover:text-foreground bg-card border border-border rounded-lg transition-colors"
+      className="flex items-center gap-2 px-3 py-1.5 text-xs text-muted hover:text-foreground bg-card border border-border rounded-lg transition-colors cursor-pointer"
     >
       <SlidersHorizontal className="h-3.5 w-3.5" />
       <span className="font-mono">

@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FilterButton, FilterPanel, type Filters } from "./FilterOptions";
+import { ContextButton, ContextPanel } from "./ContextSettings";
+
+type OpenPanel = "none" | "context" | "filters";
 
 export default function TweetTransformer() {
   const [input, setInput] = useState("");
@@ -12,7 +15,29 @@ export default function TweetTransformer() {
     maxChars: 280,
     emojiMode: "few",
   });
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [openPanel, setOpenPanel] = useState<OpenPanel>("none");
+  const [context, setContext] = useState("");
+  const [hasContext, setHasContext] = useState(false);
+
+  // Check localStorage for existing context on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("TweetSmith-context");
+    if (saved && saved.trim().length > 0) {
+      setContext(saved);
+      setHasContext(true);
+    }
+  }, []);
+
+  // Handle context changes
+  const handleContextChange = useCallback((newContext: string) => {
+    setContext(newContext);
+    setHasContext(newContext.trim().length > 0);
+  }, []);
+
+  // Toggle panel - clicking one closes the other
+  const togglePanel = (panel: "context" | "filters") => {
+    setOpenPanel((current) => (current === panel ? "none" : panel));
+  };
 
   const characterCount = input.length;
   const isOverLimit = characterCount > filters.maxChars;
@@ -50,7 +75,49 @@ export default function TweetTransformer() {
   };
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full space-y-4">
+      {/* Settings Row - Both buttons inline, above input */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <ContextButton
+            isOpen={openPanel === "context"}
+            onToggle={() => togglePanel("context")}
+            hasContext={hasContext}
+          />
+          <FilterButton
+            isOpen={openPanel === "filters"}
+            onToggle={() => togglePanel("filters")}
+            filters={filters}
+          />
+        </div>
+
+        {/* Context Panel with smooth animation */}
+        <div
+          className={`grid transition-all duration-200 ease-out ${
+            openPanel === "context"
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <ContextPanel context={context} onContextChange={handleContextChange} />
+          </div>
+        </div>
+
+        {/* Filter Panel with smooth animation */}
+        <div
+          className={`grid transition-all duration-200 ease-out ${
+            openPanel === "filters"
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <FilterPanel filters={filters} onFiltersChange={setFilters} />
+          </div>
+        </div>
+      </div>
+
       {/* Input Section */}
       <div className="space-y-2">
         <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-muted">
@@ -73,18 +140,6 @@ export default function TweetTransformer() {
             </span>
           </div>
         </div>
-      </div>
-
-      {/* Filter Options */}
-      <div className="space-y-2">
-        <FilterButton
-          isOpen={isFiltersOpen}
-          onToggle={() => setIsFiltersOpen(!isFiltersOpen)}
-          filters={filters}
-        />
-        {isFiltersOpen && (
-          <FilterPanel filters={filters} onFiltersChange={setFilters} />
-        )}
       </div>
 
       {/* Transform Button */}
@@ -123,9 +178,7 @@ export default function TweetTransformer() {
       </button>
 
       {/* Error Message */}
-      {error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
       {/* Output Section */}
       {output && (
