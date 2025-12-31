@@ -1,16 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { FilterButton, FilterPanel, type Filters } from "./FilterOptions";
 
 export default function TweetTransformer() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [filters, setFilters] = useState<Filters>({
+    maxChars: 280,
+    emojiMode: "few",
+  });
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const characterCount = input.length;
-  const maxCharacters = 280;
-  const isOverLimit = characterCount > maxCharacters;
+  const isOverLimit = characterCount > filters.maxChars;
   const isEmpty = input.trim().length === 0;
 
   const handleTransform = async () => {
@@ -64,10 +69,22 @@ export default function TweetTransformer() {
                 isOverLimit ? "text-red-400" : "text-muted"
               }`}
             >
-              {characterCount} / {maxCharacters}
+              {characterCount} / {filters.maxChars}
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Filter Options */}
+      <div className="space-y-2">
+        <FilterButton
+          isOpen={isFiltersOpen}
+          onToggle={() => setIsFiltersOpen(!isFiltersOpen)}
+          filters={filters}
+        />
+        {isFiltersOpen && (
+          <FilterPanel filters={filters} onFiltersChange={setFilters} />
+        )}
       </div>
 
       {/* Transform Button */}
