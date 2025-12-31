@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { FilterButton, FilterPanel, type Filters } from "./FilterOptions";
 import { ContextButton, ContextPanel } from "./ContextSettings";
+import TweetPreview from "./TweetPreview";
 
 type OpenPanel = "none" | "context" | "filters";
 
@@ -175,19 +176,8 @@ export default function TweetTransformer() {
       {/* Error Message */}
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {/* Output Section */}
-      {output && (
-        <div className="space-y-2 animate-in fade-in duration-300">
-          <label className="block text-[11px] font-medium uppercase tracking-[0.1em] text-muted">
-            Result
-          </label>
-          <div className="w-full px-4 py-3 bg-card border border-border rounded-lg">
-            <p className="text-sm text-foreground whitespace-pre-wrap">
-              {output}
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Tweet Preview */}
+      <TweetPreview content={output || null} isLoading={isLoading} />
     </div>
   );
 }
