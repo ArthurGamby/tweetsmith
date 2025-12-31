@@ -9,6 +9,7 @@ interface TweetPreviewProps {
   isLoading: boolean;
   original?: string;
   context?: string;
+  onSave?: () => void;
 }
 
 // Twitter verified badge SVG
@@ -25,7 +26,7 @@ function VerifiedBadge() {
   );
 }
 
-export default function TweetPreview({ content, isLoading, original, context }: TweetPreviewProps) {
+export default function TweetPreview({ content, isLoading, original, context, onSave }: TweetPreviewProps) {
   const [copied, setCopied] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const previousContentRef = useRef<string | null>(null);
@@ -68,6 +69,7 @@ export default function TweetPreview({ content, isLoading, original, context }: 
       }
 
       setSaveState("saved");
+      onSave?.();
     } catch (error) {
       console.error("Error saving tweet:", error);
       setSaveState("idle");
