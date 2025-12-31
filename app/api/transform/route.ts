@@ -7,10 +7,8 @@ import { generateWithOllama } from "@/app/lib/ollama";
  */
 export async function POST(request: NextRequest) {
   try {
-    // Parse the request body
     const body = await request.json();
 
-    // Validate that draft exists and is a string
     if (!body.draft || typeof body.draft !== "string") {
       return NextResponse.json(
         { error: "Missing or invalid 'draft' field. Expected a string." },
@@ -19,33 +17,41 @@ export async function POST(request: NextRequest) {
     }
 
     const draft = body.draft.trim();
+    const maxChars = body.filters?.maxChars ?? 280;
+    const emojiMode = body.filters?.emojiMode ?? "few";
+    const context = body.context?.trim() || "";
 
-    // Build the prompt for the LLM
-    const prompt = `You are a tweet formatter. Your job is to improve tweets.
+    // Build emoji rule based on mode
+    const emojiRule =
+      emojiMode === "none"
+        ? "No emojis allowed"
+        : emojiMode === "few"
+          ? "Use 1-2 emojis max"
+          : "Use emojis freely";
 
-            Given this draft tweet:
-            "${draft}"
+    // Build the prompt - strict limits first for better LLM compliance
+    const prompt = `Rewrite this tweet:
+"${draft}"
 
-            Improve it by:
-            - Making it cleaner and more engaging
-            - Ensuring it's well-formatted and readable
-            - Keeping it under 280 characters
+STRICT LIMITS:
+- Maximum ${maxChars} characters (THIS IS MANDATORY)
+- ${emojiRule}
+- No hashtags
+${context ? `\nAuthor style: ${context}` : ""}
 
-            Rules:
-            - Return ONLY the improved tweet text
-            - No quotes, no explanations, no extra text
-            - Preserve the original meaning and intent`;
+GUIDELINES:
+- Lead with value
+- Sound human, be engaging
+- Preserve original meaning
 
-    // Call Ollama to generate the improved tweet
+Respond with ONLY the rewritten tweet. No quotes, no explanation.`;
+
     const transformed = await generateWithOllama(prompt);
 
-    // Return the transformed tweet
     return NextResponse.json({ transformed: transformed.trim() });
   } catch (error) {
-    // Log the error for debugging
     console.error("Transform API error:", error);
 
-    // Return a helpful error message
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
 

@@ -40,7 +40,6 @@ export default function TweetTransformer() {
   };
 
   const characterCount = input.length;
-  const isOverLimit = characterCount > filters.maxChars;
   const isEmpty = input.trim().length === 0;
 
   const handleTransform = async () => {
@@ -57,7 +56,7 @@ export default function TweetTransformer() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ draft: input }),
+        body: JSON.stringify({ draft: input, filters, context }),
       });
 
       const data = await response.json();
@@ -131,12 +130,8 @@ export default function TweetTransformer() {
             className="w-full min-h-[120px] px-4 py-3 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted/60 resize-none focus:outline-none focus:border-muted/50 transition-colors"
           />
           <div className="absolute bottom-3 right-3">
-            <span
-              className={`text-xs font-mono ${
-                isOverLimit ? "text-red-400" : "text-muted"
-              }`}
-            >
-              {characterCount} / {filters.maxChars}
+            <span className="text-xs font-mono text-muted">
+              {characterCount}
             </span>
           </div>
         </div>
