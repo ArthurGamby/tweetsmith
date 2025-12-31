@@ -14,6 +14,9 @@ export interface OllamaRequest {
   model: string;
   prompt: string;
   stream: boolean;
+  options: {
+    temperature: number;
+  };
 }
 
 /**
@@ -46,6 +49,9 @@ export async function generateWithOllama(prompt: string): Promise<string> {
     model: MODEL_NAME,
     prompt,
     stream: false, // Disable streaming for simpler response handling
+    options: {
+      temperature: 0.7,
+    },
   };
 
   // Send POST request to Ollama's generate endpoint
